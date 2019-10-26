@@ -1,4 +1,5 @@
 #include <iostream>
+#include <gtest/gtest.h>
 using namespace std;
 
 enum Nucleotide { A, G, C, T };
@@ -210,11 +211,23 @@ ostream& operator<<(ostream& os, const RNA& rna) {
 	return os;
 }
 
-int main() {
-	RNA rna1;
-	RNA rna2(A, 300);
-	RNA rna3(~rna2);
-	DNA dna1(rna2, rna3);
-	cout << "rna2: " << rna2 << endl << "rna3: " << rna3 << endl << "dna1: " << dna1 << endl;
-	return 0;
+namespace testInfoNamespace {
+	class TestEnvironment :public ::testing::Test {
+	protected:
+		RNA rna1;
+		RNA rna2;
+		DNA dna;
+		TestEnvironment(): rna1(A, 1000), rna2(~rna1) {
+			dna = DNA(rna1, rna2);
+		}
+	};
+
+	TEST_F(TestEnvironment, simpleTest) {
+
+	}
+}
+
+int main(int argc, char** argv) {
+	::testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
 }

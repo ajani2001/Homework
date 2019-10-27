@@ -216,14 +216,30 @@ namespace testInfoNamespace {
 	protected:
 		RNA rna1;
 		RNA rna2;
-		DNA dna;
 		TestEnvironment(): rna1(A, 1000), rna2(~rna1) {
-			dna = DNA(rna1, rna2);
 		}
 	};
 
 	TEST_F(TestEnvironment, simpleTest) {
+		bool caughtException = false;
+		try {
+			DNA dna = DNA(rna1, rna2);
+		}
+		catch (int){
+			caughtException = true;
+		}
+		ASSERT_EQ(caughtException, false);
+	}
 
+	TEST_F(TestEnvironment, anotherSimpleTest) {
+		bool caughtException = false;
+		try {
+			DNA dna = DNA(rna1, ~rna2);
+		}
+		catch (int){
+			caughtException = true;
+		}
+		ASSERT_EQ(caughtException, true);
 	}
 }
 

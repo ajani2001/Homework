@@ -43,6 +43,9 @@ private:
 	}
 
 	Nucleotide getNucleotide(size_t nucleotideIndex) const {
+		if (nucleotideIndex >= length) {
+			throw 1;
+		}
 		size_t bitPackIndex = nucleotideIndex / (4 * sizeof(unsigned int));
 		size_t bitPairIndex = nucleotideIndex % (4 * sizeof(unsigned int));
 		unsigned int bitPack = storage[bitPackIndex];
@@ -216,14 +219,15 @@ ostream& operator<<(ostream& os, const RNA& rna) {
 
 namespace testInfoNamespace {
 	class RNATestEnvironment :public ::testing::Test {
-
+	protected:
+		RNA dummy;
+		RNATestEnvironment() : dummy(C, 1000) {}
 	};
 	class DNATestEnvironment :public ::testing::Test {
 	protected:
 		RNA rna1;
 		RNA rna2;
-		DNATestEnvironment(): rna1(A, 1000), rna2(~rna1) {
-		}
+		DNATestEnvironment(): rna1(A, 1000), rna2(~rna1) {}
 	};
 
 	TEST_F(DNATestEnvironment, succeedIfComplementary) {
@@ -238,12 +242,34 @@ namespace testInfoNamespace {
 		ASSERT_FALSE(caughtException);
 	}
 
-	TEST_F(DNATestEnvironment, exceptionInNotComplementary) {
+	TEST_F(DNATestEnvironment, exceptionIfNotComplementary) {
 		bool caughtException = false;
 		rna2[0] = Nucleotide((int(rna2[0]) + 1) % 4);
 		ASSERT_NE(rna1, ~rna2);
 		try{
 			DNA dna = DNA(rna1, rna2);
+		}
+		catch (int){
+			caughtException = true;
+		}
+		ASSERT_TRUE(caughtException);
+	}
+
+	TEST_F(RNATestEnvironment, copyConstructorIsCorrect){
+		RNA newRna = RNA(dummy);
+		bool caughtException = false;
+		try{
+			ASSERT_EQ(newRna, dummy);
+			for (int i = 0; i < dummy.getLength(); ++i){
+				ASSERT_EQ(newRna[i], dummy[i]);
+			}
+		}
+		catch (int){
+			caughtException = true;
+		}
+		ASSERT_FALSE(caughtException);
+		try{
+			newRna[dummy.getLength()];
 		}
 		catch (int){
 			caughtException = true;

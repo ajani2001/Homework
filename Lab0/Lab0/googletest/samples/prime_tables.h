@@ -26,8 +26,9 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
+//
+// Author: wan@google.com (Zhanyong Wan)
+// Author: vladl@google.com (Vlad Losev)
 
 // This provides interface PrimeTable that determines whether a number is a
 // prime and determines a next prime number. This interface is used
@@ -43,7 +44,7 @@ class PrimeTable {
  public:
   virtual ~PrimeTable() {}
 
-  // Returns true if and only if n is a prime number.
+  // Returns true iff n is a prime number.
   virtual bool IsPrime(int n) const = 0;
 
   // Returns the smallest prime number greater than p; or returns -1
@@ -54,7 +55,7 @@ class PrimeTable {
 // Implementation #1 calculates the primes on-the-fly.
 class OnTheFlyPrimeTable : public PrimeTable {
  public:
-  bool IsPrime(int n) const override {
+  virtual bool IsPrime(int n) const {
     if (n <= 1) return false;
 
     for (int i = 2; i*i <= n; i++) {
@@ -65,7 +66,7 @@ class OnTheFlyPrimeTable : public PrimeTable {
     return true;
   }
 
-  int GetNextPrime(int p) const override {
+  virtual int GetNextPrime(int p) const {
     for (int n = p + 1; n > 0; n++) {
       if (IsPrime(n)) return n;
     }
@@ -83,13 +84,13 @@ class PreCalculatedPrimeTable : public PrimeTable {
       : is_prime_size_(max + 1), is_prime_(new bool[max + 1]) {
     CalculatePrimesUpTo(max);
   }
-  ~PreCalculatedPrimeTable() override { delete[] is_prime_; }
+  virtual ~PreCalculatedPrimeTable() { delete[] is_prime_; }
 
-  bool IsPrime(int n) const override {
+  virtual bool IsPrime(int n) const {
     return 0 <= n && n < is_prime_size_ && is_prime_[n];
   }
 
-  int GetNextPrime(int p) const override {
+  virtual int GetNextPrime(int p) const {
     for (int n = p + 1; n < is_prime_size_; n++) {
       if (is_prime_[n]) return n;
     }
@@ -102,15 +103,11 @@ class PreCalculatedPrimeTable : public PrimeTable {
     ::std::fill(is_prime_, is_prime_ + is_prime_size_, true);
     is_prime_[0] = is_prime_[1] = false;
 
-    // Checks every candidate for prime number (we know that 2 is the only even
-    // prime).
-    for (int i = 2; i*i <= max; i += i%2+1) {
+    for (int i = 2; i <= max; i++) {
       if (!is_prime_[i]) continue;
 
       // Marks all multiples of i (except i itself) as non-prime.
-      // We are starting here from i-th multiplier, because all smaller
-      // complex numbers were already marked.
-      for (int j = i*i; j <= max; j += i) {
+      for (int j = 2*i; j <= max; j += i) {
         is_prime_[j] = false;
       }
     }

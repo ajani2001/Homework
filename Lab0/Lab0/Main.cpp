@@ -14,6 +14,7 @@ template <typename T> void copyArray(const T* source, T* dest, size_t arrayLengt
 
 class RNA {
 private:
+	size_t length;
 	size_t storageSize;
 	unsigned int* storage;
 
@@ -74,7 +75,6 @@ private:
 	};
 
 public:
-	size_t length;
 	RNA() : storageSize(0), length(0), storage(nullptr) {}
 	RNA(const RNA& rna): storageSize(rna.storageSize), length(rna.length) {
 		storage = new unsigned int[rna.storageSize];
@@ -87,6 +87,9 @@ public:
 		for (int i = 0; i < fillLength; ++i) {
 			setNucleotide(i, filler);
 		}
+	}
+	size_t getLength() const {
+		return length;
 	}
 	StorageAccessor operator[] (size_t nucleotideIndex) {
 		return StorageAccessor(this, nucleotideIndex);
@@ -167,7 +170,7 @@ public:
 	}
 };
 ostream& operator<<(ostream& os, const DNA& dna) {
-	for (int i = 0; i < dna.rna1.length; ++i) {
+	for (int i = 0; i < dna.rna1.getLength(); ++i) {
 		Nucleotide currentNucl = dna.rna1[i];
 		char currentChar;
 		switch (currentNucl) {
@@ -189,7 +192,7 @@ ostream& operator<<(ostream& os, const DNA& dna) {
 	return os;
 }
 ostream& operator<<(ostream& os, const RNA& rna) {
-	for (int i = 0; i < rna.length; ++i) {
+	for (int i = 0; i < rna.getLength(); ++i) {
 		Nucleotide currentNucl = rna[i];
 		char currentChar;
 		switch (currentNucl) {
@@ -212,38 +215,47 @@ ostream& operator<<(ostream& os, const RNA& rna) {
 }
 
 namespace testInfoNamespace {
-	class TestEnvironment :public ::testing::Test {
+	class RNATestEnvironment :public ::testing::Test {
+
+	};
+	class DNATestEnvironment :public ::testing::Test {
 	protected:
 		RNA rna1;
 		RNA rna2;
-		TestEnvironment(): rna1(A, 1000), rna2(~rna1) {
+		DNATestEnvironment(): rna1(A, 1000), rna2(~rna1) {
 		}
 	};
 
-	TEST_F(TestEnvironment, simpleTest) {
+	TEST_F(DNATestEnvironment, succeedIfComplementary) {
 		bool caughtException = false;
-		try {
+		ASSERT_EQ(rna1, ~rna2);
+		try{
 			DNA dna = DNA(rna1, rna2);
 		}
 		catch (int){
 			caughtException = true;
 		}
-		ASSERT_EQ(caughtException, false);
+		ASSERT_FALSE(caughtException);
 	}
 
-	TEST_F(TestEnvironment, anotherSimpleTest) {
+	TEST_F(DNATestEnvironment, exceptionInNotComplementary) {
 		bool caughtException = false;
-		try {
-			DNA dna = DNA(rna1, ~rna2);
+		rna2[0] = Nucleotide((int(rna2[0]) + 1) % 4);
+		ASSERT_NE(rna1, ~rna2);
+		try{
+			DNA dna = DNA(rna1, rna2);
 		}
 		catch (int){
 			caughtException = true;
 		}
-		ASSERT_EQ(caughtException, true);
+		ASSERT_TRUE(caughtException);
 	}
 }
 
 int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
+	int result = RUN_ALL_TESTS();
+	int dummy;
+	cin >> dummy;
+	return result;
 }

@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #include <iostream>
 #include <gtest/gtest.h>
 using namespace std;
@@ -217,70 +221,55 @@ ostream& operator<<(ostream& os, const RNA& rna) {
 	return os;
 }
 
-namespace testInfoNamespace {
+namespace testingNamespace {
 	class RNATestEnvironment :public ::testing::Test {
 	protected:
 		RNA dummy;
 		RNATestEnvironment() : dummy(C, 1000) {}
+		~RNATestEnvironment() {}
 	};
 	class DNATestEnvironment :public ::testing::Test {
 	protected:
 		RNA rna1;
 		RNA rna2;
 		DNATestEnvironment(): rna1(A, 1000), rna2(~rna1) {}
+		~DNATestEnvironment() {}
 	};
 
 	TEST_F(DNATestEnvironment, succeedIfComplementary) {
-		bool caughtException = false;
 		ASSERT_EQ(rna1, ~rna2);
-		try{
-			DNA dna = DNA(rna1, rna2);
-		}
-		catch (int){
-			caughtException = true;
-		}
-		ASSERT_FALSE(caughtException);
+		ASSERT_NO_THROW(DNA(rna1, rna2));
 	}
-
 	TEST_F(DNATestEnvironment, exceptionIfNotComplementary) {
-		bool caughtException = false;
 		rna2[0] = Nucleotide((int(rna2[0]) + 1) % 4);
 		ASSERT_NE(rna1, ~rna2);
-		try{
-			DNA dna = DNA(rna1, rna2);
-		}
-		catch (int){
-			caughtException = true;
-		}
-		ASSERT_TRUE(caughtException);
+		ASSERT_THROW(DNA(rna1, rna2), int);
 	}
 
 	TEST_F(RNATestEnvironment, copyConstructorIsCorrect){
 		RNA newRna = RNA(dummy);
-		bool caughtException = false;
-		try{
-			ASSERT_EQ(newRna, dummy);
-			for (int i = 0; i < dummy.getLength(); ++i){
-				ASSERT_EQ(newRna[i], dummy[i]);
-			}
+		ASSERT_EQ(newRna, dummy);
+		for (int i = 0; i < dummy.getLength(); ++i){
+			ASSERT_EQ(newRna[i], dummy[i]);
 		}
-		catch (int){
-			caughtException = true;
+		ASSERT_THROW(newRna[dummy.getLength()].operator Nucleotide(), int);
+		ASSERT_THROW(dummy[dummy.getLength()].operator Nucleotide(), int);
+	}
+	TEST_F(RNATestEnvironment, assignmentOperatorIsCorrect){
+		RNA newRna = dummy;
+		ASSERT_EQ(newRna, dummy);
+		for (int i = 0; i < dummy.getLength(); ++i){
+			ASSERT_EQ(newRna[i], dummy[i]);
 		}
-		ASSERT_FALSE(caughtException);
-		try{
-			newRna[dummy.getLength()];
-		}
-		catch (int){
-			caughtException = true;
-		}
-		ASSERT_TRUE(caughtException);
+		ASSERT_THROW(newRna[dummy.getLength()].operator Nucleotide(), int);
+		ASSERT_THROW(dummy[dummy.getLength()].operator Nucleotide(), int);
 	}
 }
 
 int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);
 	int result = RUN_ALL_TESTS();
+	_CrtDumpMemoryLeaks();
 	int dummy;
 	cin >> dummy;
 	return result;

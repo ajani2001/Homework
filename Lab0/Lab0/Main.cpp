@@ -1,7 +1,7 @@
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
-
+#include <stdexcept>
 #include <iostream>
 #include <gtest/gtest.h>
 using namespace std;
@@ -40,6 +40,10 @@ private:
 	void fitSize() {
 		size_t bytesRequired = (length + 3) / 4;
 		size_t bytesAllocated = storageSize * sizeof(unsigned int);
+		if (bytesRequired <= 128) {
+			resize(bytesRequired);
+			return;
+		}
 		if (bytesRequired + 100 >= bytesAllocated) {
 			resize((bytesRequired + 100) + 1000 - (bytesRequired + 100) % 1000);
 			return;
@@ -52,7 +56,7 @@ private:
 
 	Nucleotide getNucleotide(size_t nucleotideIndex) const {
 		if (nucleotideIndex >= length) {
-			throw 1;
+			throw out_of_range("inappropriate index");
 		}
 		size_t bitPackIndex = nucleotideIndex / (4 * sizeof(unsigned int));
 		size_t bitPairIndex = nucleotideIndex % (4 * sizeof(unsigned int));
@@ -62,7 +66,7 @@ private:
 
 	void setNucleotide(size_t nucleotideIndex, Nucleotide newValue) {
 		if (nucleotideIndex >= length) {
-			throw 1;
+			throw out_of_range("inappropriate index");
 		}
 		size_t bitPackIndex = nucleotideIndex / (4 * sizeof(unsigned int));
 		size_t bitPairIndex = nucleotideIndex % (4 * sizeof(unsigned int));
@@ -75,10 +79,15 @@ private:
 		RNA* proprietor;
 		size_t nucleotideIndex;
 	public:
+		StorageAccessor() = delete;
+		StorageAccessor(const StorageAccessor&) = default;
+		StorageAccessor(StorageAccessor&&) noexcept = default;
 		StorageAccessor(RNA* proprietor, size_t nucleotideIndex) : proprietor(proprietor), nucleotideIndex(nucleotideIndex) {}
 		operator Nucleotide () const {
 			return proprietor->getNucleotide(nucleotideIndex);
 		}
+		StorageAccessor& operator=(const StorageAccessor&) = delete;
+		StorageAccessor& operator=(const StorageAccessor&&) = delete;
 		Nucleotide operator= (Nucleotide newValue) const {
 			proprietor->setNucleotide(nucleotideIndex, newValue);
 			return newValue;
@@ -90,6 +99,11 @@ public:
 	RNA(const RNA& rna): storageSize(rna.storageSize), length(rna.length) {
 		storage = new unsigned int[rna.storageSize];
 		copyArray<unsigned int>(rna.storage, storage, storageSize);
+	}
+	RNA(RNA&& rna) noexcept : storage(rna.storage), storageSize(rna.storageSize), length(rna.length) {
+		rna.storage = nullptr;
+		rna.storageSize = 0;
+		rna.length = 0;
 	}
 	RNA(Nucleotide filler, int fillLength) : length(fillLength) {
 		storageSize = 0;
@@ -130,11 +144,23 @@ public:
 		return result;
 	}
 	RNA& operator=(const RNA& rvalue) {
+		if (this == &rvalue) return *this;
 		delete[] storage;
 		storageSize = rvalue.storageSize;
 		length = rvalue.length;
 		storage = new unsigned int[storageSize];
 		copyArray<unsigned int>(rvalue.storage, storage, storageSize);
+		return *this;
+	}
+	RNA& operator=(RNA&& rvalue) noexcept {
+		if (this == &rvalue) return *this;
+		delete[] storage;
+		storageSize = rvalue.storageSize;
+		length = rvalue.length;
+		storage = rvalue.storage;
+		rvalue.storage = nullptr;
+		rvalue.storageSize = 0;
+		rvalue.length = 0;
 		return *this;
 	}
 	RNA operator+(const RNA& rvalue) const {
@@ -175,7 +201,7 @@ public:
 	const RNA rna2;
 	DNA(const RNA& rna1, const RNA& rna2): rna1(rna1), rna2(rna2) {
 		if (rna1 != ~rna2) {
-			throw 1;
+			throw invalid_argument("rnas are not complementary, dna cannot be created");
 		}
 	}
 };
@@ -242,7 +268,7 @@ namespace testingNamespace {
 	TEST_F(DNATestEnvironment, exceptionIfNotComplementary) {
 		rna2[0] = Nucleotide((int(rna2[0]) + 1) % 4);
 		ASSERT_NE(rna1, ~rna2);
-		ASSERT_THROW(DNA(rna1, rna2), int);
+		ASSERT_THROW(DNA(rna1, rna2), invalid_argument);
 	}
 
 	TEST_F(RNATestEnvironment, defaultConstructorTest){
@@ -265,8 +291,14 @@ namespace testingNamespace {
 			ASSERT_EQ(newRna[i], dummy[i]);
 		}
 		ASSERT_EQ(dummy.getLength(), newRna.getLength());
-		ASSERT_THROW(newRna[newRna.getLength()].operator Nucleotide(), int);
-		ASSERT_THROW(dummy[dummy.getLength()].operator Nucleotide(), int);
+	}
+	TEST_F(RNATestEnvironment, moveConstructorIsCorrect) {
+		RNA newRna(RNA(A, 1000));
+		ASSERT_EQ(newRna, RNA(A, 1000));
+		for (int i = 0; i < newRna.getLength(); ++i) {
+			ASSERT_EQ(newRna[i], A);
+		}
+		ASSERT_EQ(RNA(A, 1000).getLength(), newRna.getLength());
 	}
 	TEST_F(RNATestEnvironment, assignmentOperatorIsCorrect){
 		RNA newRna = dummy;
@@ -275,12 +307,18 @@ namespace testingNamespace {
 			ASSERT_EQ(newRna[i], dummy[i]);
 		}
 		ASSERT_EQ(dummy.getLength(), newRna.getLength());
-		ASSERT_THROW(newRna[newRna.getLength()].operator Nucleotide(), int);
-		ASSERT_THROW(dummy[dummy.getLength()].operator Nucleotide(), int);
+	}
+	TEST_F(RNATestEnvironment, movingAssignmentOperatorIsCorrect) {
+		RNA newRna = RNA(A, 1000);
+		ASSERT_EQ(newRna, RNA(A, 1000));
+		for (int i = 0; i < newRna.getLength(); ++i) {
+			ASSERT_EQ(newRna[i], A);
+		}
+		ASSERT_EQ(RNA(A, 1000).getLength(), newRna.getLength());
 	}
 	TEST_F(RNATestEnvironment, arrayBehaviourTest){
 		RNA ARna(A, 1000);
-		ASSERT_THROW(ARna[1000].operator Nucleotide(), int);
+		ASSERT_THROW(ARna[1000].operator Nucleotide(), out_of_range);
 		ASSERT_EQ(ARna[999], A);
 		ARna[999] = G;
 		ASSERT_EQ(ARna[999], G);
@@ -361,7 +399,5 @@ int main(int argc, char** argv) {
 	cout << "Length: " << dummy2.getLength() << endl;
 	cout << "Sequence: " << dummy2 << endl;
 	cout << "DNA:" << endl << dummy3;
-	int dummy;
-	cin >> dummy;
 	return result;
 }

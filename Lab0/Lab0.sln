@@ -1,23 +1,26 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29318.209
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lab0", "Lab0\Lab0.vcxproj", "{B55970E2-DED1-4773-B11E-33A72B043F21}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Win32 = Debug|Win32
-		Release|Win32 = Release|Win32
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B55970E2-DED1-4773-B11E-33A72B043F21}.Debug|Win32.ActiveCfg = Debug|Win32
-		{B55970E2-DED1-4773-B11E-33A72B043F21}.Debug|Win32.Build.0 = Debug|Win32
-		{B55970E2-DED1-4773-B11E-33A72B043F21}.Release|Win32.ActiveCfg = Release|Win32
-		{B55970E2-DED1-4773-B11E-33A72B043F21}.Release|Win32.Build.0 = Release|Win32
+		{B55970E2-DED1-4773-B11E-33A72B043F21}.Debug|x64.ActiveCfg = Debug|x64
+		{B55970E2-DED1-4773-B11E-33A72B043F21}.Debug|x64.Build.0 = Debug|x64
+		{B55970E2-DED1-4773-B11E-33A72B043F21}.Release|x64.ActiveCfg = Release|x64
+		{B55970E2-DED1-4773-B11E-33A72B043F21}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B45F26E5-E4C3-4DE7-BD6E-11926624A802}
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

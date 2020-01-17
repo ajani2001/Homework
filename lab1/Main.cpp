@@ -6,6 +6,7 @@
 #include <vector>
 #include <forward_list>
 #include <list>
+#include <stdexcept>
 using namespace std;
 
 class Worker {
@@ -15,6 +16,7 @@ public:
 	Worker(const vector<string>& params) : params(params) {}
 	virtual void work(string& textStorage) = 0;
 };
+
 class FileReader : public Worker {
 	static size_t instanceCount;
 public:
@@ -31,6 +33,7 @@ public:
 	}
 };
 size_t FileReader::instanceCount = 0;
+
 class FileWriter : public Worker {
 	static size_t instanceCount;
 public:
@@ -45,43 +48,61 @@ public:
 	}
 };
 size_t FileWriter::instanceCount = 0;
+
 class GrepWorker : public Worker {
 public:
 	GrepWorker(const vector<string>& params) : Worker(params) {}
 	virtual void work(string& textStorage) {
 		string buffer;
 		istringstream oldStorageStream;
-		//oldStorageStream.rdbuf()->pubsetbuf(const_cast<char*>(textStorage.data()), textStorage.length() + 1);
 		oldStorageStream.str(textStorage);
 		ostringstream newStorageStream;
+		bool firstLine = true;
 		while (!oldStorageStream.eof()) {
 			getline(oldStorageStream, buffer);
-			if (buffer.find(params[0]) != string::npos)newStorageStream << buffer << endl;
+			if (buffer.find(params[0]) != string::npos) {
+				if (firstLine) {
+					newStorageStream << buffer;
+					firstLine = false;
+				}
+				else {
+					newStorageStream << endl << buffer;
+				}
+			}
 		}
 		textStorage = newStorageStream.str();
 	}
 };
+
 class Sorter : public Worker {
 public:
 	Sorter(const vector<string>& params) : Worker(params) {}
 	virtual void work(string& textStorage) {
 		string buffer;
 		istringstream oldStorageStream;
-		//oldStorageStream.rdbuf()->pubsetbuf(const_cast<char*>(textStorage.data()), textStorage.length() + 1);
 		oldStorageStream.str(textStorage);
 		ostringstream newStorageStream;
 		forward_list<string> sorter;
-		while (!oldStorageStream.eof()) {
+		oldStorageStream.peek();
+		while(!oldStorageStream.eof()) {
 			getline(oldStorageStream, buffer);
 			sorter.push_front(buffer);
 		}
 		sorter.sort();
+		bool firstLine = true;
 		for (forward_list<string>::iterator iter = sorter.begin(); iter != sorter.end(); ++iter) {
-			newStorageStream << (*iter) << endl;
+			if (firstLine) {
+				newStorageStream << (*iter);
+				firstLine = false;
+			}
+			else {
+				newStorageStream << endl << (*iter);
+			}
 		}
 		textStorage = newStorageStream.str();
 	}
 };
+
 class Replacer : public Worker {
 public:
 	Replacer(const vector<string>& params) : Worker(params) {}
@@ -91,6 +112,7 @@ public:
 		}
 	}
 };
+
 class Dumper : public Worker {
 public:
 	Dumper(const vector<string>& params) : Worker(params) {}

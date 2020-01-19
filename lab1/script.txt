@@ -2,7 +2,9 @@ desc
 1 = replace abracadabra cadabraabra
 2 = grep braab
 3 = sort
-0 = readfile input.txt
+0 = readfile "D:\Пушкин Александр. Евгений Онегин - royallib.ru.txt"
 5 = writefile output.txt
+8 = replace Татьяна Софья
+10 = grep Софья
 csed
-0 -> 1 -> 2 -> 3 -> 5
+0 -> 1 -> 3 -> 8 -> 10 -> 5
